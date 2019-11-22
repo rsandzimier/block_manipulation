@@ -1,0 +1,21 @@
+<launch>
+  
+  <include file="$(find excavator)/launch/zed_no_tracking.launch">
+        <arg name="node_name"             value="zed_node_top" />
+        <arg name="camera_model"          value="zed" /> <!-- 'zed' or 'zedm' -->
+        <arg name="camera_id"             value="1" />
+        <arg name="tf_prefix"             value="zed_top" />
+        <arg name="resolution"             default="0" />
+   		<arg name="frame_rate"             default="15" />
+  </include>
+
+ <include file="$(find excavator)/launch/zed_no_tracking.launch">
+        <arg name="node_name"             value="zed_node_front" />
+        <arg name="camera_model"          value="zedm" /> 
+        <arg name="camera_id"             value="0" />
+        <arg name="tf_prefix"             value="zed_front" />
+        <arg name="resolution"             default="0" />
+   		<arg name="frame_rate"             default="15" />
+  </include>
+
+</launch>

@@ -1,0 +1,21 @@
+<launch>
+  
+  <include file="$(find excavator)/launch/joystick.launch"/>
+  
+  <include file="$(find excavator)/launch/frames.launch"/>
+  
+  <node pkg="ur_rtde" type="ur_rtde_driver.py" name="ur_rtde_driver" output="screen">
+      <param name="config_file" value="$(find ur_rtde)/src/control_loop_configuration.xml"/>
+  </node>
+  
+  <node pkg="ur_rtde" type="command_manager.py" name="command_manager" output="screen" />
+  
+  <node pkg="excavator" type="joystick_commander.py" name="joystick_commander" output="screen" />
+
+  <node pkg="excavator" type="block_commander.py" name="block_commander" output="screen" />
+
+  <!--<include file="$(find excavator)/launch/cameras.launch"/>-->
+
+  <include file="$(find excavator)/launch/viz.launch"/> 
+
+</launch>

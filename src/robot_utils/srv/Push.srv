@@ -1,0 +1,4 @@
+geometry_msgs/Pose2D start_pose
+std_msgs/Float32 push_distance
+---
+std_msgs/Bool finished

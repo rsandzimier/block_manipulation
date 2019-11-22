@@ -1,0 +1,20 @@
+<launch>
+  <arg name="calibration"             default="false" /> <!-- If calibration true, publish apriltag tool tf and do not publish camera tf's-->
+
+  <!-- The following 2 args are written to by camera_calibration_commander.py-->
+  <arg name="tf_camera_top_robot_base_args" default="-0.765921836903 -0.0438178311557 1.50174617072 0.0145734953125 -0.73947443895 -0.023318383027 -0.672622792051 robot_base zed_top/base_link 10"/>
+  <arg name="tf_camera_front_robot_base_args" default="-0.325199699451 -0.422317641449 0.200363747161 0.257698809932 -0.6367718849 -0.6985049934 -0.200508513922 robot_base zed_front/base_link 10"/>
+
+  <node name="tf_robot_base_map" pkg="tf" type="static_transform_publisher" args="0.0 0.0 0.0 0.0 0.0 0.0 1.0 map robot_base 10" />
+  <node pkg="excavator" type="dynamic_frames.py" name="dynamic_frames"/>
+
+  <group unless="$(arg calibration)">
+    <node name="tf_camera_top_robot_base" pkg="tf" type="static_transform_publisher" args="$(arg tf_camera_top_robot_base_args)"/>
+    <node name="tf_camera_front_robot_base" pkg="tf" type="static_transform_publisher" args="$(arg tf_camera_front_robot_base_args)"/> 
+  </group>
+  
+  <group if="$(arg calibration)">
+    <node name="tf_april_tag0_bucket" pkg="tf" type="static_transform_publisher" args="0.0 0.0 0.05 0.0 0.0 1.0 0.0 bucket tag_0_cad 10"/>
+  </group>
+
+</launch>

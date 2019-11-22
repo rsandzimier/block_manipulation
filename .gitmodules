@@ -1,3 +1,6 @@
 [submodule "src/ur-lightweight-driver"]
 	path = src/ur-lightweight-driver
 	url = https://github.com/ur-lightweight-driver/ur-lightweight-driver.git
+[submodule "src/ur_lightweight_driver"]
+	path = src/ur_lightweight_driver
+	url = https://github.com/ur-lightweight-driver/ur_lightweight_driver.git

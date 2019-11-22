@@ -1,0 +1,4 @@
+<launch>
+ 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find excavator)/config/viz.rviz"/>
+    <param name="robot_description" command="cat $(find excavator)/models/robot_model.xml" />
+</launch>

@@ -1,0 +1,17 @@
+<launch>
+  
+  <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+      <arg name="node_namespace" value= "apriltag_ros_continuous_node_top"/>
+      <arg name="camera_name" value="/zed/zed_node_top/left" />
+      <arg name="image_topic" value="image_rect_color" />
+      <arg name="camera_frame" value="zed_top/zed_left_camera_optical_frame" />
+  </include>
+
+  <include file="$(find apriltag_ros)/launch/continuous_detection.launch">
+      <arg name="node_namespace" value= "apriltag_ros_continuous_node_front"/>
+      <arg name="camera_name" value="/zed/zed_node_front/left" />
+      <arg name="image_topic" value="image_rect_color" />
+      <arg name="camera_frame" value="zed_front/zed_left_camera_optical_frame" />
+  </include>
+  
+</launch>

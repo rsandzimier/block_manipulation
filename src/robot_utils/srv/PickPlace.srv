@@ -1,0 +1,4 @@
+geometry_msgs/Pose2D start_pose
+geometry_msgs/Pose2D end_pose
+---
+std_msgs/Bool finished
