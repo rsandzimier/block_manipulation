@@ -20,10 +20,14 @@ class Planner:
         for i in range(self.num_blocks):
             self.goal.append(self.Block(i,offset+spacing*(i%n_rows),offset+spacing*np.floor(i/n_rows),0.0))
 
-        [self.Block(0,0.03,0.03,0.0),self.Block(1,0.09,0.03,0.0),self.Block(2,0.03,0.09,0.0),self.Block(3,0.09,0.09,0.0)]
-        #self.goal = [self.Block(0,0.03,0.03,0.0),self.Block(1,0.09,0.03,0.0),self.Block(2,0.03,0.09,0.0),self.Block(3,0.09,0.09,0.0)]
-
         self.colors = ['white','yellow','blue','red','purple','orange','green','brown','black']
+
+        # Create PRM to find path to get block 0 to goal position
+        self.prm = self.PRM(self.sample_state(), self.goal, 0, self.sample_state, num_samples = 100)
+        # Find shortest path to get list of actions and list of blocks that are in the way
+        actions, blocks_in_way = self.prm.findShortestPath()
+        print actions, blocks_in_way
+
 
     class Block:
         def __init__(self, block_id, x, y, theta, in_place=False):
@@ -34,6 +38,96 @@ class Planner:
             self.in_place = in_place # In final location.
             self.width = 0.0508
 
+    class PickPlaceAction:
+        def __init__(self, start, end, grasp_offset_90):
+            '''
+            start: Block object representing block starting position
+            end: Block object representing block end position
+            grasp_offset_90: Bool. False if grasp block faces at 0 and pi. True if grasp block faces at pi/2 and -pi/2
+            '''
+            self.start = start
+            self.end = end
+            self.grasp_offset_90 = grasp_offset_90
+
+    class PushAction:
+        def __init__(self, start, direction, distance):
+            '''
+            start: Block object representing block starting position
+            direction: float. direction (rad) to push block (must be start.theta + k*pi/2. k=0,1,2,3)
+            distance: float. distance (m) to push block
+
+            '''
+            self.start = start
+            self.direction = direction
+            self.distance = distance
+
+    class PRM:
+        def __init__(self, start, goal, block_id, state_sampler, num_samples = 100):
+            '''
+            start: list of blocks representing starting configuration
+            goal: list of blocks representing goal configuration
+            block_id: ID of block to place in goal position during this planning iteration
+            state_sampler: function that can be called to sample a state
+            num_samples: number of samples to add to PRM
+            '''
+
+            # Need to add some way of goal being "move block out of way randomly"
+            self.nodes = []
+            self.block_id = block_id
+            self.addNode(self.Node(start,0))
+            self.addNode(self.Node(goal,1))
+
+            for s in range(num_samples):
+                rand_state = state_sampler(seed_state=start[:],sample_ids=[block_id],in_place_only=True, epsilon=0.2)
+                self.addNode(self.Node(rand_state,s+2))
+
+        class Node:
+            def __init__(self, state, node_id):
+                '''
+                state: list of blocks representing configuration at node
+                node_id: int. unique id for each node. 0 for start. 1 for goal. any unique int for all other nodes
+                connections: list of connections to other nodes. Note that connections are uni-directional
+                '''
+                self.node_id = node_id
+                self.state = state
+                self.connections = []
+
+        class Connection:
+            def __init__(self,to,action,collisions=[],traps=[]):
+                self.to = to
+                self.action = action
+                self.collisions = collisions
+                self.traps = traps
+                self.cost = 0.0 # Cost based on action (pushing costs more) and number of collisions, etc
+
+        def addNode(self, node):
+            # Append to self.nodes
+            # Check all connections and add any as necessary
+            for i in range(len(self.nodes)):
+                # Add connections if there is an action that can connect each pair of nodes
+                pass
+            self.nodes.append(node)
+
+        def findShortestPath(self):
+            # Find shortest path from start to goal using PRM 
+
+            # return:
+            # actions: list of actions to get from start to goal. Can be PickPlaceAction object or PushAction object
+            # in way: list of blocks that are in the way of this path (must be moved first)
+            
+            # Not implemented
+            # Use below for hard-coded testing
+            return [Planner.PickPlaceAction(Planner.Block(0,0.0,0.0,0.0),Planner.Block(0,0.0,0.0,0.0),False),Planner.PushAction(Planner.Block(0,0.0,0.0,0.0),0.0,0.0)], [Planner.Block(1,0.0,0.0,0.0),Planner.Block(2,0.0,0.0,0.0)]
+
+
+        # Start and goal
+        # Nodes: State. connections
+        # Connections: to, action, collisions, traps
+
+    # Action
+    # PickPlace. - Grasp orientation. Start. End. 
+    # Push. Orientation. Start. 
+
     def valid_state(self,blocks):
         n_blocks = len(blocks)
         for i in range(n_blocks):
@@ -43,9 +137,12 @@ class Planner:
                     return False
         return True
 
-    def blocks_collide(self,blockA,blockB):
+    def blocks_collide(self,blockA,blockB,in_place_only=False):
         R = blockA.width*np.sqrt(2)/2
         half_width = blockA.width/2
+
+        if in_place_only and not (blockA.in_place or blockB.in_place):
+            return False
 
         for projection_angle in np.linspace(0,np.pi/2,2):
             projected_corners_A = np.cos(blockA.theta+projection_angle)*blockA.x + \
@@ -73,36 +170,62 @@ class Planner:
                 return False
         return True
 
-    def block_collides_with_any(self, blocks, test_block):
+    def block_collides_with_any(self, blocks, test_block,in_place_only=False):
         n_blocks = len(blocks)
         for i in range(n_blocks):
-            if self.blocks_collide(blocks[i],test_block):
+            if self.blocks_collide(blocks[i],test_block, in_place_only=in_place_only):
                 return False
         return True 
 
-    def sample_state(self):
-        max_fails = 20*self.num_blocks
+    def block_in_bounds(self, block):
+        return block.x >= self.bounds[0][0] and block.x <= self.bounds[1][0] and block.y >= self.bounds[0][1] and block.y <= self.bounds[1][1] 
+
+    def sample_state(self, seed_state=None, sample_ids=[],in_place_only=False, epsilon=0.0):
+        '''
+        seed_state (optional): list. Any blocks that are not sampled copy the blocks from this list. Must also provide sample_ids
+        sample_ids (optional): list of ints. A list specifying which block ids to sample. Any block ids not included in this list
+            should be copied from seed_state
+        in_place_only (optional): Bool. If True, ignore collisions between blocks with in_place set to False. 
+        epsilon (optional): float. Bias parameter. Probability that block is sampled along a perpendicular line from the block 
+        '''
+        if seed_state is None:
+            block_list = [None]*self.num_blocks
+            sample_ids = range(self.num_blocks)
+        else:
+            block_list = [None if s.block_id in sample_ids else s for s in seed_state]
+
+        num_blocks = len(block_list)
+
+        max_fails = 20*len(sample_ids)
         while True:
-            blocks = []
+            blocks = block_list
             fail_count = 0
-            for i in range(self.num_blocks):
+            for i in sample_ids:
                 while True:
-                    new_block = self.sample_block(i)
-                    if self.block_collides_with_any(blocks, new_block):
-                        blocks.append(new_block)
+                    new_block = self.sample_block(i,epsilon=epsilon)
+                    blocks_no_none = [b for b in blocks if b is not None]
+                    if self.block_collides_with_any(blocks_no_none, new_block,in_place_only=in_place_only) and self.block_in_bounds(new_block):
+                        blocks[i]=new_block
                         break
                     fail_count += 1
                     if fail_count > max_fails:
                         break
-                if len(blocks) != i+1:
+                if blocks[i] is None:
                     break
-            if len(blocks) == self.num_blocks:
+            if blocks.count(None) == 0:
                 return blocks
 
-    def sample_block(self,block_id):
+    def sample_block(self,block_id,epsilon=0.0):
         x_rand = np.random.uniform(self.bounds[0][0],self.bounds[1][0])
         y_rand = np.random.uniform(self.bounds[0][1],self.bounds[1][1])
         theta_rand = np.random.uniform(0,2*np.pi)
+        if np.random.random() < epsilon:
+            goal_block = [self.goal[i] for i in range(len(self.goal)) if self.goal[i].block_id == block_id][0]
+            direction = goal_block.theta + np.random.randint(4)*np.pi/2
+            distance = np.random.random()*2*goal_block.width
+            x_rand = goal_block.x + distance*np.cos(direction)
+            y_rand = goal_block.y + distance*np.sin(direction)
+            theta_rand = goal_block.theta
         return self.Block(block_id, x_rand, y_rand, theta_rand)
 
 
@@ -145,6 +268,10 @@ P = Planner()
 for i in range(15):
     S = P.sample_state() 
     P.display(S)
+
+# for n in P.prm.nodes:
+#     P.display(n.state)
+
 
 
 
