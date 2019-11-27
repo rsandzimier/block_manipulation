@@ -7,6 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib as mpl
+import copy
 
 class Planner:
     def __init__(self, start=None, goal=None, args=None):
@@ -26,7 +27,7 @@ class Planner:
         self.prm = self.PRM(self.sample_state(), self.goal, 0, self.sample_state, num_samples = 100)
         # Find shortest path to get list of actions and list of blocks that are in the way
         actions, blocks_in_way = self.prm.findShortestPath()
-        print actions, blocks_in_way
+        print( actions, blocks_in_way)
 
 
     class Block:
@@ -60,6 +61,70 @@ class Planner:
             self.start = start
             self.direction = direction
             self.distance = distance
+
+    class plRS:
+        def __init__(self, motion_planner):
+            #add any hyper parameters here
+            self.motion_planner = motion_planner
+            pass
+
+        def findplRSplan(block_id, blocks_remaining, config_current, config_goal):
+            # recursive function for solving block arrangement problem
+            path_U = []
+            path_M, blocks_in_way = self.motion_planner(start, goal, block_id, state_sampler)
+            
+            if not blocks_in_way:
+                config_current[block_id] = copy.copy(config_goal[block_id])
+
+                if not blocks_remaining:
+                    return path_U
+
+                for block_id_r in blocks_remaining:
+                    blocks_remaining_without_r = [x for x in blocks_remaining if x != block_id_r]
+                    path = pathfindplRSplan(block_id_r, blocks_remaining_without_r, config_current, config_goal)
+                    if len(path)>0:
+                        return path_U + path
+            else:
+                block_id_b = blocks_in_way[0]:
+                if block_id_b in blocks_remaining:
+                    config_current, path_C = plRSclear(block_id,blocks_remaining_without_b,config_current,config_goal):
+                    if len(path_C)>0:
+                        path = pathfindplRSplan(block_id, blocks_remaining, config_current, config_goal)
+                        if len(path)>0:
+                            return path_C+path
+
+
+        def plRSclear(block_id,blocks_remaining,config_current,path_B):
+            # clear path
+            intermediate_state = sample_state(seed_state=None, sample_ids=[block_id],in_place_only=False, epsilon=0.0)
+            path_U, blocks_in_way = self.motion_planner(config_current, intermediate_state, block_id, state_sampler)
+            if not blocks_in_way:
+                config_current[block_id] = intermediate_state[block_id]
+                return config_current, path_U
+            else:
+                block_id_b = blocks_in_way[0]:
+                if block_id_b in blocks_remaining:
+                    blocks_remaining_without_b = [x for x in blocks_remaining if x != block_id_b]
+                    config_current, path_C = plRSclear(block_id_b,blocks_remaining_without_b,config_current,[path_U,path_B])
+                    if len(path_C)>0:
+                        config_current, path = plRSclear(block_id_b,blocks_remaining,config_current,[path_B])
+                        if len(path)>0:
+                            return config_current, path_C+path 
+
+        
+            
+
+
+
+
+
+
+                
+
+
+
+
+
 
     class PRM:
         def __init__(self, start, goal, block_id, state_sampler, num_samples = 100):
@@ -260,7 +325,7 @@ class Planner:
 
         plt.xlim(self.bounds[0][0]-width, self.bounds[1][0]+width)
         plt.ylim(self.bounds[0][1]-width, self.bounds[1][1]+width)
-
+        ax.axis('equal')
         plt.show()
 
 
