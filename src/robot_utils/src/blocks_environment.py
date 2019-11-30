@@ -384,6 +384,8 @@ class Planner(object):
             projected_corners_A = np.cos(blockA.theta+projection_angle)*blockA.x + \
                                   np.sin(blockA.theta+projection_angle)*blockA.y + np.array([-(half_width+buffersA[i+2]),half_width+buffersA[i]])
             no_collision = True
+            below = False
+            above = False
             for j in range(4):
                 corner_x = (half_width + buffersB[buffer_ind[j][0]])*signs[j][0]
                 corner_y = (half_width + buffersB[buffer_ind[j][1]])*signs[j][1]
@@ -392,6 +394,13 @@ class Planner(object):
                 if projected_corner_B >= projected_corners_A[0] and projected_corner_B <= projected_corners_A[1]:
                     no_collision = False
                     break
+                elif projected_corner_B < projected_corners_A[0]:
+                    below = True
+                elif projected_corner_B > projected_corners_A[1]:
+                    above = True
+                if below and above:
+                    no_collision = False
+                    break                    
             if no_collision:
                 return False
 
@@ -400,6 +409,8 @@ class Planner(object):
             projected_corners_B = np.cos(blockB.theta+projection_angle)*blockB.x + \
                                   np.sin(blockB.theta+projection_angle)*blockB.y + np.array([-(half_width+buffersB[i+2]),half_width+buffersB[i]])
             no_collision = True
+            below = False
+            above = False
             for j in range(4):
                 corner_x = (half_width + buffersA[buffer_ind[j][0]])*signs[j][0]
                 corner_y = (half_width + buffersA[buffer_ind[j][1]])*signs[j][1]
@@ -408,17 +419,30 @@ class Planner(object):
                 if projected_corner_A >= projected_corners_B[0] and projected_corner_A <= projected_corners_B[1]:
                     no_collision = False
                     break
+                elif projected_corner_A < projected_corners_B[0]:
+                    below = True
+                elif projected_corner_A > projected_corners_B[1]:
+                    above = True
+                if below and above:
+                    no_collision = False
+                    break          
             if no_collision:
                 return False
 
         return True
 
-    def block_collides_with_any(self, blocks, test_block,in_place_only=False, buffers_test_block=None):
+    def block_collides_with_any(self, blocks, test_block,in_place_only=False, buffers_test_block=None, buffers=None):
+        '''
+        buffers_test_block: tuple or list of length 4 with buffer for each edge of test block
+        buffers: dict of tuples/lists. Each is length 4. If this is not None, every block needs to be provided a buffer
+        '''
         n_blocks = len(blocks)
         for key in blocks:
-            if self.blocks_collide(blocks[key],test_block, in_place_only=in_place_only, buffersB=buffers_test_block):
-                return False
-        return True 
+            buffersA = None if buffers is None else buffers[key]
+            if self.blocks_collide(blocks[key],test_block, in_place_only=in_place_only, buffersA=buffersA, buffersB=buffers_test_block):
+                return True
+
+        return False 
 
     def block_collides_with_any_return_collisions(self, blocks, test_block, in_place_only=False, buffers_test_block=None):
         n_blocks = len(blocks)
@@ -478,19 +502,35 @@ class Planner(object):
             return len(collisions) == 0, soft_collisions
         return len(collisions) == 0
 
-    def sample_state(self, seed_state=None, sample_ids=[],in_place_only=False, epsilon=0.0):
+    def sample_state(self, seed_state=None, sample_ids=[], in_place_only=False, epsilon=0.0, clear_path_blocks_list=None, clear_path_buffers_list=None):
         '''
         seed_state (optional): dict. Any blocks that are not sampled copy the blocks from this dict. Must also provide sample_ids
         sample_ids (optional): list of ints. A list specifying which block ids to sample. Any block ids not included in this list
             should be copied from seed_state
         in_place_only (optional): Bool. If True, ignore collisions between blocks with in_place set to False. 
         epsilon (optional): float. Bias parameter. Probability that block is sampled along a perpendicular line from the block 
+        clear_path_blocks_list (optional): list of blocks representing a path
+        clear_path_buffers_list (optional): list of buffers for path 
         '''
         if seed_state is None:
             block_dict = {i:None for i in range(self.num_blocks)}
             sample_ids = range(self.num_blocks)
         else:
             block_dict = {s.block_id: None if s.block_id in sample_ids else s for s in seed_state.values()}
+
+        if clear_path_blocks_list is None:
+            clear_path_blocks_list = []
+
+        if clear_path_buffers_list is None:
+            clear_path_buffers_list = []
+
+        clear_path_blocks = {}
+        clear_path_buffers = {}
+        for i in range(len(clear_path_blocks_list)):
+            key = chr(ord('a')+i)# Use letter so that it is unique and not confused with numbered block_ids. Cannot use block_ids because the ids in 
+                                #clear_path_blocks_list are not necessarily unique 
+            clear_path_blocks[key] = clear_path_blocks_list[i]
+            clear_path_buffers[key] = clear_path_buffers_list[i]
 
         num_blocks = len(block_dict)
 
@@ -502,7 +542,8 @@ class Planner(object):
                 while True:
                     new_block = self.sample_block(i,epsilon=epsilon)
                     blocks_no_none = {b.block_id:b for b in blocks.values() if b is not None} 
-                    if self.block_collides_with_any(blocks_no_none, new_block,in_place_only=in_place_only) and self.block_in_bounds(new_block):
+                    if not self.block_collides_with_any(blocks_no_none, new_block,in_place_only=in_place_only) and self.block_in_bounds(new_block) and \
+                            not self.block_collides_with_any(clear_path_blocks, new_block, buffers=clear_path_buffers):
                         blocks[i]=new_block
                         break
                     fail_count += 1
@@ -701,6 +742,23 @@ actions,states = P.plrs.startplRS()
 #         print ("Push",a.start.block_id,"at",(a.start.x,a.start.y,a.start.theta),"in direction",a.direction,"for distance",a.distance)
 #     P.display(s)
 # P.display(states[-1])
+
+for i in range(15):
+    clear_path_blocks_list = [P.goal[2],P.goal[5],P.goal[6],P.goal[7]]
+    clear_path_buffers_list = [(0.0,0.0,0.0,0.0),(1.0,0.0,0.0,0.0),(0.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0)]
+    S = P.sample_state(seed_state=P.goal,sample_ids=[8],clear_path_blocks_list=clear_path_blocks_list,clear_path_buffers_list=clear_path_buffers_list)
+    P.display(S)
+
+
+actions, collisions, states, cost = P.prm.findShortestPath()
+print ("num actions", len(actions), "collisions", collisions.keys(), "cost", cost)
+for a,s in zip(actions,states[:-1]):
+    if type(a) == Planner.PickPlaceAction:
+        print ("Pick",a.start.block_id,"at", (a.start.x,a.start.y,a.start.theta),"and place at",(a.end.x,a.end.y,a.end.theta))
+    elif type(a) == Planner.PushAction:
+        print ("Push",a.start.block_id,"at",(a.start.x,a.start.y,a.start.theta),"in direction",a.direction,"for distance",a.distance)
+    P.display(s)
+P.display(states[-1])
 
 
 
