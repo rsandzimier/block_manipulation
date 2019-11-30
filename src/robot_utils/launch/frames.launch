@@ -6,7 +6,7 @@
   <arg name="tf_camera_front_robot_base_args" default="-0.325199699451 -0.422317641449 0.200363747161 0.257698809932 -0.6367718849 -0.6985049934 -0.200508513922 robot_base zed_front/base_link 10"/>
 
   <node name="tf_robot_base_map" pkg="tf" type="static_transform_publisher" args="0.0 0.0 0.0 0.0 0.0 0.0 1.0 map robot_base 10" />
-  <node pkg="excavator" type="dynamic_frames.py" name="dynamic_frames"/>
+  <node pkg="robot_utils" type="dynamic_frames.py" name="dynamic_frames"/>
 
   <group unless="$(arg calibration)">
     <node name="tf_camera_top_robot_base" pkg="tf" type="static_transform_publisher" args="$(arg tf_camera_top_robot_base_args)"/>

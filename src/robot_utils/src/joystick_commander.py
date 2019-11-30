@@ -8,11 +8,11 @@ Created on Feb 21, 2017
 
 import rospy
 from sensor_msgs.msg import Joy
-from ur_rtde.msg import Mode, Setpoint, Trajectory
+from ur_lightweight_driver.msg import Mode, Setpoint, Trajectory
 from std_msgs.msg import Bool, Float32
 from geometry_msgs.msg import Pose2D
 from sensor_msgs.msg import JointState
-from excavator.srv import PickPlace, Push, Home  
+from robot_utils.srv import PickPlace, Push, Home  
 
 import math
 import numpy as np

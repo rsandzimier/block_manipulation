@@ -1,25 +1,25 @@
 <launch>
   
-  <include file="$(find excavator)/launch/joystick.launch"/>
+  <include file="$(find robot_utils)/launch/joystick.launch"/>
   
-  <include file="$(find excavator)/launch/frames.launch">
+  <include file="$(find robot_utils)/launch/frames.launch">
       <arg name="calibration" value= "true"/>
   </include>
 
-  <node pkg="ur_rtde" type="ur_rtde_driver.py" name="ur_rtde_driver" output="screen">
+  <node pkg="ur_lightweight_driver" type="ur_rtde_driver.py" name="ur_rtde_driver" output="screen">
       <param name="config_file" value="$(find ur_rtde)/src/control_loop_configuration.xml"/>
   </node>
   
-  <node pkg="ur_rtde" type="command_manager.py" name="command_manager" output="screen" />
+  <node pkg="ur_lightweight_driver" type="command_manager.py" name="command_manager" output="screen" />
   
-  <node pkg="excavator" type="camera_calibration_commander.py" name="camera_calibration_commander" output="screen">
-      <param name="frames_file" value="$(find excavator)/launch/frames.launch"/>
+  <node pkg="robot_utils" type="camera_calibration_commander.py" name="camera_calibration_commander" output="screen">
+      <param name="frames_file" value="$(find robot_utils)/launch/frames.launch"/>
   </node>
 
-  <include file="$(find excavator)/launch/cameras.launch"/>
+  <include file="$(find robot_utils)/launch/cameras.launch"/>
  
-  <include file="$(find excavator)/launch/apriltags.launch"/>
+  <include file="$(find robot_utils)/launch/apriltags.launch"/>
 
-  <include file="$(find excavator)/launch/viz.launch"/>
+  <include file="$(find robot_utils)/launch/viz.launch"/>
 
 </launch>
