@@ -497,73 +497,34 @@ class Planner(object):
 
         plt.show()
 
+if __name__ == "__main__":
+    P = Planner()
+    # for i in range(15):
+    #     S = P.sample_state() 
+    #     P.display(S)
 
-P = Planner()
-# for i in range(15):
-#     S = P.sample_state() 
-#     P.display(S)
+    # for n in [P.prm.nodes[0]]:
+    #     for conn in n.connections:
+    #         print "Collisions"
+    #         for blk in conn.collisions.values():
+    #             print blk.block_id
 
-# for n in [P.prm.nodes[0]]:
-#     for conn in n.connections:
-#         print "Collisions"
-#         for blk in conn.collisions.values():
-#             print blk.block_id
+    # for n in P.prm.nodes.values():
+    #     P.display(n.state)
 
-# for n in P.prm.nodes.values():
-#     P.display(n.state)
-
-for i in range(15):
-    clear_path_blocks_list = [P.goal[2],P.goal[5],P.goal[6],P.goal[7]]
-    clear_path_buffers_list = [(0.0,0.0,0.0,0.0),(1.0,0.0,0.0,0.0),(0.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0)]
-    S = P.sample_state(seed_state=P.goal,sample_ids=[8],clear_path_blocks_list=clear_path_blocks_list,clear_path_buffers_list=clear_path_buffers_list)
-    P.display(S)
-
-
-actions, collisions, states, cost = P.prm.findShortestPath()
-print ("num actions", len(actions), "collisions", collisions.keys(), "cost", cost)
-for a,s in zip(actions,states[:-1]):
-    if type(a) == Planner.PickPlaceAction:
-        print ("Pick",a.start.block_id,"at", (a.start.x,a.start.y,a.start.theta),"and place at",(a.end.x,a.end.y,a.end.theta))
-    elif type(a) == Planner.PushAction:
-        print ("Push",a.start.block_id,"at",(a.start.x,a.start.y,a.start.theta),"in direction",a.direction,"for distance",a.distance)
-    P.display(s)
-P.display(states[-1])
+    for i in range(15):
+        clear_path_blocks_list = [P.goal[2],P.goal[5],P.goal[6],P.goal[7]]
+        clear_path_buffers_list = [(0.0,0.0,0.0,0.0),(1.0,0.0,0.0,0.0),(0.0,0.0,0.0,0.0),(0.0,1.0,0.0,0.0)]
+        S = P.sample_state(seed_state=P.goal,sample_ids=[8],clear_path_blocks_list=clear_path_blocks_list,clear_path_buffers_list=clear_path_buffers_list)
+        P.display(S)
 
 
-
-
-
-
-
-        # Tree/graph of bunch of states
-
-        # Collision detector (list of blocks) -> Bool
-
-        # class Tree:
-        #     self.root = Node
-
-        # class Node:
-        #     self.blocks = # List of blocks
-        #     self.children = # List of nodes
-
-
-
-        # Tree/graph Connections of states
-        
-        # Block class
-        # State is a list of blocks
-        
-
-        # Boundaries
-        # Goal configuration
-        # Starting configuration
-
-        # Methods pick/place and push
-
-        # Pick/place: state, final_state -> 
-
-        # Collision checker
-        # State sampler
-
-        # Tree - Many states
-        # State - Many blocks
+    actions, collisions, states, cost = P.prm.findShortestPath()
+    print ("num actions", len(actions), "collisions", collisions.keys(), "cost", cost)
+    for a,s in zip(actions,states[:-1]):
+        if type(a) == Planner.PickPlaceAction:
+            print ("Pick",a.start.block_id,"at", (a.start.x,a.start.y,a.start.theta),"and place at",(a.end.x,a.end.y,a.end.theta))
+        elif type(a) == Planner.PushAction:
+            print ("Push",a.start.block_id,"at",(a.start.x,a.start.y,a.start.theta),"in direction",a.direction,"for distance",a.distance)
+        P.display(s)
+    P.display(states[-1])

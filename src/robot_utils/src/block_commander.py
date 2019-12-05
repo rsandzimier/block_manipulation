@@ -34,7 +34,7 @@ class BlockActionCommander:
         self.gripper_close_pos = 100.0
         self.gripper_push_pos = 60.0 
 
-        self.min_move_time = 0.5
+        self.min_move_time = 2.0
 
         self.max_trans_vel = 0.1
         self.max_rot_vel = 1.0
@@ -44,7 +44,7 @@ class BlockActionCommander:
         self.z_push = 0.0
         self.traj_time = 0.0
 
-        self.coordinate_sys_offset = np.array([0.0,0.0,0.180,0.0,0.0,0.0,0.0])
+        self.coordinate_sys_offset = np.array([-0.800,0.0,0.2,0.0,0.0,0.0,0.0])
 
         self.block_half_width = 0.0254
         self.gripper_half_width = 0.012
@@ -56,6 +56,13 @@ class BlockActionCommander:
 
         setpoints = []
         self.traj_time = 0.0
+
+        while np.abs(start.theta) > np.pi:
+            start.theta -= 2*np.pi*np.sign(start.theta)
+
+        while np.abs(end.theta) > np.pi:
+            end.theta -= 2*np.pi*np.sign(end.theta)
+
         above = [start.x,start.y,self.z_clear,start.theta,self.gripper_open_pos]
         setpoints.append(self.calc_setpoint(self.current_pose,above))
         pre_grasp = [start.x,start.y,0.0,start.theta,self.gripper_open_pos]
@@ -88,6 +95,8 @@ class BlockActionCommander:
         D_post = D_push - self.push_buffer
         print start, dist, D_pre, D_push, D_post, np.cos(start.theta), np.sin(start.theta)
         gripper_angle = start.theta + np.pi/2
+        while np.abs(gripper_angle) > np.pi:
+            gripper_angle -= 2*np.pi*np.sign(gripper_angle)
 
         setpoints = []
         self.traj_time = 0.0
