@@ -17,6 +17,7 @@ from robot_utils.srv import PickPlace, Push, Home
 import math
 import numpy as np
 import threading     
+import tf
 
 import blocks_environment as env                       
 
@@ -43,6 +44,8 @@ class JoyMsgManager:
 
         self.time_switch_last = rospy.get_rostime()
 
+        self.listener = tf.TransformListener()
+
         # rospy.Timer(rospy.Duration(0.002), self.cb_publish)
 
     def cb_robot_ready(self, robot_ready_msg):
@@ -65,21 +68,31 @@ class JoyMsgManager:
             pick_place = rospy.ServiceProxy('pick_place', PickPlace)
             push = rospy.ServiceProxy('push', Push)
 
-            P = env.Planner()
+            home()
+            start = []
+            blocks = [0,1]#,2,3]#,4,5,6,7,8]
+            for blk in blocks:
+                (trans,rot) = self.listener.lookupTransform( 'robot_base','tag_'+str(blk+1),rospy.Time())
+                print 'tag_'+str(blk+1),trans, rot
+                rot_eul = tf.transformations.euler_from_quaternion(rot)
+                start.append([trans[0]+0.800,trans[1],rot_eul[2]])
+                print start
 
-            actions, collisions, states, cost = P.prm.findShortestPath()
-            print ("num actions", len(actions), "collisions", collisions.keys(), "cost", cost)
+            P = env.Planner(start=start)
+            # P.display(P.start)
+            actions,states = P.plrs.startplRS()
+            print ("num actions", len(actions))
             for a,s in zip(actions,states[:-1]):
                 if type(a) == env.Planner.PickPlaceAction:
                     print ("Pick",a.start.block_id,"at", (a.start.x,a.start.y,a.start.theta),"and place at",(a.end.x,a.end.y,a.end.theta))
-                    P.display(s)
+                    # P.display(s)
                     pick_place(Pose2D(a.start.x,a.start.y,a.start.theta+a.grasp_offset_90*np.pi/2),Pose2D(a.end.x,a.end.y,a.end.theta+a.grasp_offset_90*np.pi/2))
                 elif type(a) == env.Planner.PushAction:
                     print ("Push",a.start.block_id,"at",(a.start.x,a.start.y,a.start.theta),"in direction",a.direction,"for distance",a.distance)
-                    P.display(s)
+                    # P.display(s)
                     push(Pose2D(a.start.x,a.start.y,a.direction),Float32(a.distance))
-            P.display(states[-1])
-
+            # P.display(states[-1])
+            home()
             # home()
             # pick_place(Pose2D(-0.804,-0.014,0.0),Pose2D(-0.704,0.05,np.pi/4))
             # push(Pose2D(-0.704,0.05,np.pi/4),Float32(0.15))

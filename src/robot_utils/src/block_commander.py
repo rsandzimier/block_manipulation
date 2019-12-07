@@ -26,7 +26,7 @@ class BlockActionCommander:
         self.push = rospy.Service('push', Push, self.push)
         self.home = rospy.Service('home', Home, self.home)
 
-        self.home_pose = np.array([-0.600,-0.500,0.17,0.0,0.0])
+        self.home_pose = np.array([0.200,-0.500,0.1,0.0,0.0])
         self.current_pose = None
         self.move_time_unknown_pose = 10.0 # Move time to use when current pose is not known
 
@@ -41,7 +41,7 @@ class BlockActionCommander:
         self.max_gripper_vel = 100.0
 
         self.z_clear = 0.07
-        self.z_push = 0.0
+        self.z_push = 0.010
         self.traj_time = 0.0
 
         self.coordinate_sys_offset = np.array([-0.800,0.0,0.2,0.0,0.0,0.0,0.0])

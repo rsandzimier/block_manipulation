@@ -7,7 +7,7 @@
   </include>
 
   <node pkg="ur_lightweight_driver" type="ur_rtde_driver.py" name="ur_rtde_driver" output="screen">
-      <param name="config_file" value="$(find ur_lightweight_driver)/src/control_loop_configuration.xml"/>
+      <param name="config_file" value="$(find ur_rtde)/src/control_loop_configuration.xml"/>
   </node>
   
   <node pkg="ur_lightweight_driver" type="command_manager.py" name="command_manager" output="screen" />
@@ -18,4 +18,8 @@
 
   <include file="$(find robot_utils)/launch/cameras.launch"/>
  
+  <include file="$(find robot_utils)/launch/apriltags.launch"/>
+
+  <include file="$(find robot_utils)/launch/viz.launch"/>
+
 </launch>

@@ -14,7 +14,7 @@
 
   <node pkg="robot_utils" type="block_commander.py" name="block_commander" output="screen" />
 
-  <!--<include file="$(find robot_utils)/launch/cameras.launch"/>-->
+  <include file="$(find robot_utils)/launch/cameras.launch"/>
 
   <!--<include file="$(find robot_utils)/launch/viz.launch"/>-->
 

@@ -11,52 +11,35 @@ import copy
 
 class Planner(object):
     def __init__(self, start=None, goal=None, args=None):
-        self.num_blocks =9
+        self.bounds = ((-0.15,-0.1),(0.2,0.3))
+        self.bounds = ((-0.1,-0.1),(0.15,0.15))
 
-        self.bounds = ((-0.15,-0.15),(0.25,0.25))
+        if start is None:
+            self.num_blocks = 9
+            self.start = self.sample_state()
+        else:
+            self.num_blocks = len(start)
+            self.start = {}
+            for i in range(self.num_blocks):
+                self.start[i] = self.Block(i, start[i][0], start[i][1], start[i][2])
+                print start[i]
+
 
         self.goal = {}
         n_rows = np.ceil(np.sqrt(self.num_blocks))
-        spacing = 0.06
+        spacing = 0.055
         offset = 0.03
         for i in range(self.num_blocks):
             self.goal[i] = self.Block(i,offset+spacing*(i%n_rows),offset+spacing*np.floor(i/n_rows),0.0,True)
 
         self.colors = ['white','yellow','blue','red','purple','orange','green','brown','black']
 
-        start_prm = dict(self.goal)
-        # start_prm[2] = copy.deepcopy(self.goal[2])
-        # start_prm[2].x = 0.1811
-        # start_prm[2].y = 0.1911
-        # # start_prm[2].theta = 0.3
-        # start_prm = self.sample_state(seed_state=dict(start_prm),sample_ids=[8])        
-        start_prm = self.sample_state()
 
-        # for i in range(self.num_blocks):
-        #     if i%2==1:
-        #         start_prm[i].in_place = True
-            # if i!=2 and i!=8:
-            #     start_prm[i].in_place = True
+        start_prm = copy.deepcopy(self.start)
 
         goal_prm = copy.deepcopy(self.goal)
 
-        for k in start_prm:
-            print(start_prm[k].in_place)
-        print('#######################')
-        for k in goal_prm:
-            print(goal_prm[k].in_place)
-        # print(self.goal[8].x)
-        # print(self.goal[2].x)
-
-
-        # goal_prm[8].in_place = False
-        # goal_prm[6].in_place = False
-
         self.plrs = self.plRS(start_prm, goal_prm, self.PRM, self.sample_state, self.connect_states)
-
-        # Find shortest path to get list of actions and list of blocks that are in the way
-
-        # actions, collisions, states, cost = self.prm.findShortestPath()
 
     class Block(object):
         def __init__(self, block_id, x, y, theta, in_place=False):
@@ -124,6 +107,11 @@ class Planner(object):
             # display(self.config_goal)
 
             actions, states = self.findplRSplan(0, blocks_remaining,self.config_current, self.config_goal)
+            if type(states) is not list:
+                states = [states]
+            if type(actions) is not list:
+                actions = [actions]    
+            print("States",states,copy.deepcopy(self.config_current))
             states = [copy.deepcopy(self.config_current)] + states
             return actions, states
 
@@ -138,7 +126,11 @@ class Planner(object):
             config_goal_prm = copy.deepcopy(config_current)
             config_goal_prm[block_id] = copy.deepcopy(config_goal[block_id])
             path_U, blocks_in_way, states_U, cost = self.motion_planner(copy.deepcopy(config_current), config_goal_prm, block_id, self.state_sampler, self.state_connector, num_samples = 20).findShortestPath()
+            if not path_U:
+                return [], config_current
             states_U = states_U[1:]
+            if type(states_U) is not list:
+                states_U = [states_U]
             # for i,state in enumerate(states_U):
             #     # Planner.display(state)
             #     display(state)
@@ -156,7 +148,7 @@ class Planner(object):
             #     display(state)
                         
             if not blocks_in_way_ids:
-
+                print("No block in way")
                 config_current[block_id] = copy.deepcopy(config_goal[block_id])
                 blocks_remaining = [x for x in blocks_remaining if x != block_id]
 
@@ -176,7 +168,10 @@ class Planner(object):
 
                     if len(path)>0:
                         return copy.deepcopy(path_U) + copy.deepcopy(path), copy.deepcopy(states_U) + copy.deepcopy(states)
+                    else:
+                        print("No path")
             else:
+                print "Block in way"
 
                 block_id_b = blocks_in_way_ids[0]
                 # print("block_b", block_id_b)
@@ -185,7 +180,7 @@ class Planner(object):
                 if block_id_b in blocks_remaining:
 
                     blocks_remaining_without_b = [x for x in blocks_remaining if x != block_id_b]
-                    path_C, states_C, config_current = self.plRSclear(block_id_b,blocks_remaining_without_b,config_current,path_U)
+                    path_C, states_C, config_current = self.plRSclear(block_id_b,blocks_remaining_without_b,config_current)
 
 
                     if len(path_C)>0:
@@ -194,11 +189,14 @@ class Planner(object):
                      
                         if len(path)>0:
                             return copy.deepcopy(path_C) + copy.deepcopy(path), copy.deepcopy(states_C) + copy.deepcopy(states)
-
+                        else:
+                            print("No new path")
+                    else:
+                        print("No clear path")
             return [], config_current
 
 
-        def plRSclear(self,block_id, blocks_remaining, config_current, path_B):
+        def plRSclear(self,block_id, blocks_remaining, config_current):
             # clear path
             print('############CLEAR START################')
 
@@ -214,21 +212,25 @@ class Planner(object):
             #     display(state)
 
             # config_current[block_id] = copy.deepcopy(intermediate_state[block_id])
-            return path_M, states_M, intermediate_state
+            # return path_M, states_M, intermediate_state
+            blocks_in_way_ids = [k for k in blocks_in_way]
 
-            # if not blocks_in_way:
-            #     config_current[block_id] = intermediate_state[block_id]
-            #     return config_current, path_U
-            # else:
-            #     block_id_b = blocks_in_way[0]
-            #     if block_id_b in blocks_remaining:
-            #         blocks_remaining_without_b = [x for x in blocks_remaining if x != block_id_b]
-            #         config_current, path_C = plRSclear(block_id_b,blocks_remaining_without_b,config_current,[path_U,path_B])
-            #         if len(path_C)>0:
-            #             config_current, path = plRSclear(block_id_b,blocks_remaining,config_current,[path_B])
-            #             if len(path)>0:
-            #                 return config_current, path_C+path 
-
+            if not blocks_in_way_ids:
+                print("No block in way")
+                return path_M, states_M, intermediate_state
+                # config_current[block_id] = intermediate_state[block_id]
+                # return config_current, path_U
+            else:
+                print("Block in way", blocks_in_way_ids)
+                block_id_b = blocks_in_way_ids[0]
+                if block_id_b in blocks_remaining:
+                    blocks_remaining_without_b = [x for x in blocks_remaining if x != block_id_b]
+                    path_C, states_C, config_current = self.plRSclear(block_id_b,blocks_remaining_without_b,config_current)
+                    if len(path_C)>0:
+                        path, states, config_current = self.plRSclear(block_id,blocks_remaining,config_current)
+                        if len(path)>0:
+                            return path_C+path, states_C+states, config_current
+            return [], [], None
 
     class PRM(object):
         def __init__(self, start, goal, block_id, state_sampler, state_connector, num_samples = 100):
@@ -580,7 +582,7 @@ class Planner(object):
             collision = {}
             collision.update(collisions_pick)
             collision.update(collisions_place)
-            cost = 1 + len(collision)
+            cost = 1 + 100*len(collision)
             actions.append(action)
             collisions.append(collision)
             costs.append(cost)
@@ -593,7 +595,7 @@ class Planner(object):
             collision = {}
             collision.update(collisions_pick)
             collision.update(collisions_place)
-            cost = 1 + len(collision)
+            cost = 1 + 100*len(collision)
             actions.append(action)
             collisions.append(collision)
             costs.append(cost)
@@ -612,7 +614,7 @@ class Planner(object):
                 action = self.PushAction(state_from[block_id], alpha, distance)
                 collision = {}
                 collision.update(collisions_push)
-                cost = 5 + len(collision)
+                cost = 5 + 100.0*len(collision)
                 actions.append(action)
                 collisions.append(collision)
                 costs.append(cost)
@@ -654,7 +656,7 @@ class Planner(object):
         plt.show()
 
 def display(blocks):
-    bounds = ((-0.15,-0.15),(0.25,0.25))
+    bounds = ((-0.1,-0.1),(0.2,0.3))
     colors = ['white','yellow','blue','red','purple','orange','green','brown','black']
 
     fig = plt.figure()

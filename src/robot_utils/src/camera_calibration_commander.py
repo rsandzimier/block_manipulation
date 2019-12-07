@@ -8,7 +8,7 @@ Created on Feb 21, 2017
 
 import rospy
 from sensor_msgs.msg import Joy
-from ur_rtde.msg import Mode, Setpoint, Trajectory
+from ur_lightweight_driver.msg import Mode, Setpoint, Trajectory
 from std_msgs.msg import Bool
 from sensor_msgs.msg import JointState
 import math
@@ -22,15 +22,14 @@ import tf
 # TO DO: 
 # - Right now, pressing button 0 does nothing. Does not stop motion or enter standby mode
 
-CALIBRATION_TRAJECTORIES_JOINT_TOP  =   [[[5.0,[math.radians(13.9),  math.radians(-26.2), math.radians(42.7),  math.radians(-127.8), math.radians(85.4),  math.radians(-9.1)]]],
-                                        [[2.0,[math.radians(16.97), math.radians(-11.0), math.radians(46.4),  math.radians(-133.2), math.radians(92.1),  math.radians(-9.2)]]],
-                                        [[2.0,[math.radians(16.97), math.radians(-28.4), math.radians(46.4),  math.radians(-133.2), math.radians(92.1),  math.radians(-9.2)]]],
-                                        [[2.0,[math.radians(-16.7), math.radians(-28.4), math.radians(46.4),  math.radians(-133.2), math.radians(92.1),  math.radians(-9.2)]]],
-                                        [[2.0,[math.radians(-16.7), math.radians(-9.7),  math.radians(46.4),  math.radians(-133.2), math.radians(92.1),  math.radians(-9.2)]]],
-                                        [[2.0,[math.radians(-16.7), math.radians(-31.6), math.radians(46.4),  math.radians(-133.2), math.radians(92.1),  math.radians(-9.2)]]],
-                                        [[2.0,[math.radians(-38.6), math.radians(-70.5), math.radians(131.0), math.radians(-151.0), math.radians(76.0),  math.radians(-8.3)]]],
-                                        [[2.0,[math.radians(16.0),  math.radians(-70.5), math.radians(131.0), math.radians(-145.0), math.radians(96.0), math.radians(-8.3)]]],
-                                        [[2.0,[math.radians(13.9),  math.radians(-26.2), math.radians(42.7),  math.radians(-127.8), math.radians(85.4),  math.radians(-9.1)]]]]
+CALIBRATION_TRAJECTORIES_JOINT_TOP  =   [[[5.0,[math.radians(16.7),  math.radians(-36.4), math.radians(75.0),  math.radians(-130.0), math.radians(85.5),  math.radians(-22.6)]]],
+                                        [[2.0,[math.radians(-17.0), math.radians(-44.0), math.radians(90.7),  math.radians(-150.3), math.radians(85.6),  math.radians(-22.6)]]],
+                                        [[2.0,[math.radians(-20.6), math.radians(-64.3), math.radians(129.0),  math.radians(-157.0), math.radians(87.5),  math.radians(-24.5)]]],
+                                        [[2.0,[math.radians(24.6), math.radians(-62.3), math.radians(122.8),  math.radians(-147.0), math.radians(85.5),  math.radians(-22.2)]]],
+                                        [[2.0,[math.radians(16.7),  math.radians(-36.4), math.radians(75.0),  math.radians(-130.0), math.radians(85.5),  math.radians(-22.6)]]],
+                                        [[2.0,[math.radians(-17.0), math.radians(-44.0), math.radians(90.7),  math.radians(-150.3), math.radians(85.6),  math.radians(-22.6)]]],
+                                        [[2.0,[math.radians(-20.6), math.radians(-64.3), math.radians(129.0),  math.radians(-157.0), math.radians(87.5),  math.radians(-24.5)]]],
+                                        [[2.0,[math.radians(24.6), math.radians(-62.3), math.radians(122.8),  math.radians(-147.0), math.radians(85.5),  math.radians(-22.2)]]]]
 
 
 CALIBRATION_TRAJECTORIES_JOINT_FRONT=   [[[5.0,[math.radians(14.0),  math.radians(-22.0), math.radians(42.0),  math.radians(-15.0), math.radians(-75.0),  math.radians(0.0)]]],
@@ -114,11 +113,6 @@ class JoyMsgManager:
             self.calibration_procedure("top")
             self.time_switch_last = rospy.get_rostime()
 
-        if joy.buttons[8] == 1 and rospy.get_rostime()-self.time_switch_last>rospy.Duration(0,100000000):
-            print "STARTING CAMERA CALIBRATION - FRONT CAMERA"
-            self.calibration_procedure("front")
-            self.time_switch_last = rospy.get_rostime()
-
     def calibration_procedure(self, camera):
         if self.calibrating:
             print "Cannot begin calibration while calibration already in progress"
@@ -193,7 +187,7 @@ class JoyMsgManager:
         self.calibrating = False
     
     def write_to_file(self, camera, trans, rot):
-        filename = rospy.get_param("camera_calibration_commander/frames_file", 'src/excavator/launch/frames.launch') # Get param, otherwise default
+        filename = rospy.get_param("camera_calibration_commander/frames_file", 'src/robot_utils/launch/frames.launch') # Get param, otherwise default
         prefix = "  <arg name=\"tf_camera_" + camera + "_robot_base_args\" default=\""
         suffix = " ".join(map(str, trans)) + " " + " ".join(map(str, rot)) + " robot_base zed_" + camera + "/base_link 10\"/>\n"
         f = open(filename, "r")
