@@ -4,3 +4,9 @@
 [submodule "src/ur_lightweight_driver"]
 	path = src/ur_lightweight_driver
 	url = https://github.com/ur-lightweight-driver/ur_lightweight_driver.git
+[submodule "src/apriltag_ros"]
+	path = src/apriltag_ros
+	url = https://github.com/AprilRobotics/apriltag_ros.git
+[submodule "src/zed-ros-wrapper"]
+	path = src/zed-ros-wrapper
+	url = https://github.com/stereolabs/zed-ros-wrapper.git

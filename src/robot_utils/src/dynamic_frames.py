@@ -6,7 +6,7 @@
 
 import rospy
 from sensor_msgs.msg import JointState
-from ur_rtde.msg import ToolState
+from ur_lightweight_driver.msg import ToolState
 import tf
 import math
 

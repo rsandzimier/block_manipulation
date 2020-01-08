@@ -7,11 +7,11 @@ Created on Feb 21, 2017
 '''
 
 import rospy
-from ur_rtde.msg import Mode, Setpoint, Trajectory
+from ur_lightweight_driver.msg import Mode, Setpoint, Trajectory
 from std_msgs.msg import Bool, Float32
 from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose2D
-from excavator.srv import PickPlace, Push, Home  
+from robot_utils.srv import PickPlace, Push, Home  
 import math
 import numpy as np
 import threading
@@ -26,7 +26,7 @@ class BlockActionCommander:
         self.push = rospy.Service('push', Push, self.push)
         self.home = rospy.Service('home', Home, self.home)
 
-        self.home_pose = np.array([-0.600,-0.500,0.17,0.0,0.0])
+        self.home_pose = np.array([0.200,-0.500,0.1,0.0,0.0])
         self.current_pose = None
         self.move_time_unknown_pose = 10.0 # Move time to use when current pose is not known
 
@@ -34,17 +34,17 @@ class BlockActionCommander:
         self.gripper_close_pos = 100.0
         self.gripper_push_pos = 60.0 
 
-        self.min_move_time = 0.5
+        self.min_move_time = 2.0
 
         self.max_trans_vel = 0.1
         self.max_rot_vel = 1.0
         self.max_gripper_vel = 100.0
 
         self.z_clear = 0.07
-        self.z_push = 0.0
+        self.z_push = 0.010
         self.traj_time = 0.0
 
-        self.coordinate_sys_offset = np.array([0.0,0.0,0.180,0.0,0.0,0.0,0.0])
+        self.coordinate_sys_offset = np.array([-0.800,0.0,0.2,0.0,0.0,0.0,0.0])
 
         self.block_half_width = 0.0254
         self.gripper_half_width = 0.012
@@ -56,6 +56,13 @@ class BlockActionCommander:
 
         setpoints = []
         self.traj_time = 0.0
+
+        while np.abs(start.theta) > np.pi:
+            start.theta -= 2*np.pi*np.sign(start.theta)
+
+        while np.abs(end.theta) > np.pi:
+            end.theta -= 2*np.pi*np.sign(end.theta)
+
         above = [start.x,start.y,self.z_clear,start.theta,self.gripper_open_pos]
         setpoints.append(self.calc_setpoint(self.current_pose,above))
         pre_grasp = [start.x,start.y,0.0,start.theta,self.gripper_open_pos]
@@ -88,6 +95,8 @@ class BlockActionCommander:
         D_post = D_push - self.push_buffer
         print start, dist, D_pre, D_push, D_post, np.cos(start.theta), np.sin(start.theta)
         gripper_angle = start.theta + np.pi/2
+        while np.abs(gripper_angle) > np.pi:
+            gripper_angle -= 2*np.pi*np.sign(gripper_angle)
 
         setpoints = []
         self.traj_time = 0.0
