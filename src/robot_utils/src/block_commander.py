@@ -1,9 +1,9 @@
 #!/usr/bin/python
 '''
-Created on Feb 21, 2017
+# Authors:  Filippos Sotiropoulos (filippos.sotiropoulos@gmail.com)
+#           Ryan Sandzimier (rsandzimier@gmail.com)
 
-# Authors:  Filippos Sotiropoulos (fes@mit.edu)
-#           Ryan Sandzimier (rsandz@mit.edu)
+ROS node to execute robot actions. Sends commands to ur_lightweight_driver, which controls robot. 
 '''
 
 import rospy
@@ -93,7 +93,7 @@ class BlockActionCommander:
         D_pre = -self.block_half_width-self.gripper_half_width-self.push_buffer
         D_push = D_pre + self.push_buffer + dist
         D_post = D_push - self.push_buffer
-        print start, dist, D_pre, D_push, D_post, np.cos(start.theta), np.sin(start.theta)
+
         gripper_angle = start.theta + np.pi/2
         while np.abs(gripper_angle) > np.pi:
             gripper_angle -= 2*np.pi*np.sign(gripper_angle)

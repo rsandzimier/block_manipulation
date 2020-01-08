@@ -1,9 +1,9 @@
 #!/usr/bin/python
 '''
-Created on Feb 21, 2017
+# Authors:  Filippos Sotiropoulos (filippos.sotiropoulos@gmail.com)
+#           Ryan Sandzimier (rsandzimier@gmail.com)
 
-# Authors:  Filippos Sotiropoulos (fes@mit.edu)
-#           Ryan Sandzimier (rsandz@mit.edu)
+ROS Node for calibrating over head camera relative to robot
 '''
 
 import rospy
@@ -18,9 +18,6 @@ import numpy.matlib as npm
 
 import threading
 import tf
-
-# TO DO: 
-# - Right now, pressing button 0 does nothing. Does not stop motion or enter standby mode
 
 CALIBRATION_TRAJECTORIES_JOINT_TOP  =   [[[5.0,[math.radians(16.7),  math.radians(-36.4), math.radians(75.0),  math.radians(-130.0), math.radians(85.5),  math.radians(-22.6)]]],
                                         [[2.0,[math.radians(-17.0), math.radians(-44.0), math.radians(90.7),  math.radians(-150.3), math.radians(85.6),  math.radians(-22.6)]]],
@@ -44,7 +41,6 @@ CALIBRATION_TRAJECTORIES_JOINT_FRONT=   [[[5.0,[math.radians(14.0),  math.radian
                                         [[2.0,[math.radians(17.0),  math.radians(-24.0), math.radians(56.0),  math.radians(-9.0), math.radians(-83.0),  math.radians(0.0)]]]]
 
 def averageQuaternions(Q):
-    
     # Number of quaternions to average
     M = Q.shape[0]
 

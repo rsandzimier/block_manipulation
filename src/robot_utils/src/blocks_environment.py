@@ -1,7 +1,9 @@
 #!/usr/bin/python
 '''
-# Authors:  Filippos Sotiropoulos (fes@mit.edu)
-#           Ryan Sandzimier (rsandz@mit.edu)
+# Authors:  Filippos Sotiropoulos (filippos.sotiropoulos@gmail.com)
+#           Ryan Sandzimier (rsandzimier@gmail.com)
+
+Class defining block rearrangement planner
 '''
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,8 +24,6 @@ class Planner(object):
             self.start = {}
             for i in range(self.num_blocks):
                 self.start[i] = self.Block(i, start[i][0], start[i][1], start[i][2])
-                print start[i]
-
 
         self.goal = {}
         n_rows = np.ceil(np.sqrt(self.num_blocks))
@@ -74,7 +74,6 @@ class Planner(object):
             start: Block object representing block starting position
             direction: float. direction (rad) to push block (must be start.theta + k*pi/2. k=0,1,2,3)
             distance: float. distance (m) to push block
-
             '''
             self.start = start
             self.direction = direction
@@ -82,7 +81,6 @@ class Planner(object):
 
     class plRS:
         def __init__(self,config_current, config_goal, motion_planner,state_sampler,state_connector):
-            #add any hyper parameters here
             self.motion_planner =  motion_planner
             self.state_sampler = state_sampler
             self.state_connector = state_connector
@@ -90,38 +88,24 @@ class Planner(object):
             self.config_current = copy.deepcopy(config_current)
             self.config_goal = copy.deepcopy(config_goal)
 
-            # print(blocks_remaining)
-            # self.startplRS(blocks_remaining, config_current, config_goal)
-
-
         def startplRS(self):
 
             blocks_remaining = []
             for block_id in self.config_current:
                 if not self.config_current[block_id].in_place:
                     blocks_remaining = blocks_remaining + [block_id]
-            
-            # blocks_remaining = [x for x in blocks_remaining if x != 8]
-            print('#############STARTING##################')
-            # display(self.config_current)
-            # display(self.config_goal)
 
             actions, states = self.findplRSplan(0, blocks_remaining,self.config_current, self.config_goal)
             if type(states) is not list:
                 states = [states]
             if type(actions) is not list:
                 actions = [actions]    
-            print("States",states,copy.deepcopy(self.config_current))
+
             states = [copy.deepcopy(self.config_current)] + states
             return actions, states
 
         def findplRSplan(self, block_id, blocks_remaining, config_current, config_goal):
             # recursive function for solving block arrangement problem
-            print('#############  NEW plRS recursion  ##################')
-            # print("blocks remaining", blocks_remaining)
-            # print("block to move",block_id)
-            # display(config_current)
-            # display(config_goal)
 
             config_goal_prm = copy.deepcopy(config_current)
             config_goal_prm[block_id] = copy.deepcopy(config_goal[block_id])
@@ -131,51 +115,25 @@ class Planner(object):
             states_U = states_U[1:]
             if type(states_U) is not list:
                 states_U = [states_U]
-            # for i,state in enumerate(states_U):
-            #     # Planner.display(state)
-            #     display(state)
-
 
             blocks_in_way_ids = [k for k in blocks_in_way]
-            
-            print("blocks remaining", blocks_remaining)
-            # print("block to move",block_id)
-            # print("PRM path_U", path_U)
-            # print(path_U)
-            # display(config_current)
-            # display(config_goal_prm)
-            # for i,state in enumerate(states_U):
-            #     display(state)
                         
             if not blocks_in_way_ids:
-                print("No block in way")
                 config_current[block_id] = copy.deepcopy(config_goal[block_id])
                 blocks_remaining = [x for x in blocks_remaining if x != block_id]
-
-                # config_current[block_id].in_place = True
-                # print('no blocks in way')
-                # print('blocks remaining', blocks_remaining)
                 
                 if not blocks_remaining:
-                    # print('no blocks remaining so returning')
                     return copy.deepcopy(path_U), copy.deepcopy(states_U)
 
                 for block_id_r in blocks_remaining:
                     blocks_remaining_without_r = [x for x in blocks_remaining if x != block_id_r]
-                    # print('blocks remaining without r', blocks_remaining_without_r)
-                    # print('block_id_r',block_id_r)
                     path, states = self.findplRSplan(block_id_r, blocks_remaining_without_r, config_current, config_goal)
 
                     if len(path)>0:
                         return copy.deepcopy(path_U) + copy.deepcopy(path), copy.deepcopy(states_U) + copy.deepcopy(states)
                     else:
-                        print("No path")
             else:
-                print "Block in way"
-
                 block_id_b = blocks_in_way_ids[0]
-                # print("block_b", block_id_b)
-                # print("blocks_remaining", blocks_remaining)
 
                 if block_id_b in blocks_remaining:
 
@@ -189,39 +147,22 @@ class Planner(object):
                      
                         if len(path)>0:
                             return copy.deepcopy(path_C) + copy.deepcopy(path), copy.deepcopy(states_C) + copy.deepcopy(states)
-                        else:
-                            print("No new path")
-                    else:
-                        print("No clear path")
             return [], config_current
 
 
         def plRSclear(self,block_id, blocks_remaining, config_current):
-            # clear path
-            print('############CLEAR START################')
+            # function for recursively clearing the path
 
             intermediate_state= self.state_sampler(seed_state=copy.deepcopy(config_current), sample_ids=[block_id], in_place_only=False, epsilon=0.0)
-            # print('CLEAR block_id',block_id)
-            # print("blocks remaining", blocks_remaining)
-            # display(config_current)
-            # display(intermediate_state)
-            # print('#############CLEAR END################')
+
             path_M, blocks_in_way, states_M, _  = self.motion_planner(copy.deepcopy(config_current), copy.deepcopy(intermediate_state), block_id, self.state_sampler, self.state_connector, num_samples = 20).findShortestPath()
             states_M =states_M[1:]
-            # for i,state in enumerate(states_M):
-            #     display(state)
 
-            # config_current[block_id] = copy.deepcopy(intermediate_state[block_id])
-            # return path_M, states_M, intermediate_state
             blocks_in_way_ids = [k for k in blocks_in_way]
 
             if not blocks_in_way_ids:
-                print("No block in way")
                 return path_M, states_M, intermediate_state
-                # config_current[block_id] = intermediate_state[block_id]
-                # return config_current, path_U
             else:
-                print("Block in way", blocks_in_way_ids)
                 block_id_b = blocks_in_way_ids[0]
                 if block_id_b in blocks_remaining:
                     blocks_remaining_without_b = [x for x in blocks_remaining if x != block_id_b]
@@ -241,8 +182,6 @@ class Planner(object):
             state_sampler: function that can be called to sample a state
             num_samples: number of samples to add to PRM
             '''
-
-            # Need to add some way of goal being "move block out of way randomly"
             self.nodes = {}
             self.block_id = block_id
             self.state_connector = state_connector
@@ -279,7 +218,6 @@ class Planner(object):
                 self.action = action
                 self.collisions = collisions
                 self.cost = cost
-                # Later on may need to add something like "traps" that keeps track of any blocks that get "trapped" (i.e. can't be moved)
 
         def addNode(self, node):
             for node_i in self.nodes.values():
@@ -293,14 +231,15 @@ class Planner(object):
                 node_from.addConnection(self.Connection(node_from,node_to, a, c, j))
 
         def findShortestPath(self):
-            # Find shortest path from start to goal using PRM 
+            '''
+            Find shortest path from start to goal using PRM 
 
-            # return:
-            # actions: list of actions to get from start to goal. Can be PickPlaceAction object or PushAction object
-            # collisions: dict of blocks that are in the way of this path (must be moved first)
-            # states: list of states including the start and end state as well as any intermediate states
-            # cost: float. total cost of path
-
+            return:
+            actions: list of actions to get from start to goal. Can be PickPlaceAction object or PushAction object
+            collisions: dict of blocks that are in the way of this path (must be moved first)
+            states: list of states including the start and end state as well as any intermediate states
+            cost: float. total cost of path
+            '''
             nodes = dict(self.nodes)
 
             while len(nodes) > 0:
@@ -335,14 +274,6 @@ class Planner(object):
             states = states[::-1]
 
             return actions, collisions, states, cost
-
-        # Start and goal
-        # Nodes: State. connections
-        # Connections: to, action, collisions, traps
-
-    # Action
-    # PickPlace. - Grasp orientation. Start. End. 
-    # Push. Orientation. Start. 
 
     def blocks_collide(self,blockA,blockB,in_place_only=False, buffersA = None, buffersB = None):
         if buffersA is None:
@@ -663,17 +594,6 @@ def display(blocks):
     ax = fig.add_subplot(111)
     r = patches.Rectangle((bounds[0][0],bounds[0][1]), bounds[1][0]-bounds[0][0], bounds[1][1]-bounds[0][1],fill=False)
     ax.add_patch(r)
-    # for blk in goal.values():
-    #     r = patches.Rectangle((0,0), blk.width, blk.width,facecolor=colors[blk.block_id%9],edgecolor='k',alpha=0.1,hatch='x',linestyle='--')
-    #     width = blk.width
-    #     R = width*np.sqrt(2)/2
-    #     x = blk.x
-    #     y = blk.y
-    #     theta = blk.theta
-    #     t = mpl.transforms.Affine2D().rotate(theta) +  mpl.transforms.Affine2D().translate(x,y) - mpl.transforms.Affine2D().translate(R*np.cos(theta+np.pi/4),R*np.sin(theta+np.pi/4)) + ax.transData  #+  mpl.transforms.Affine2D().translate(x-R*np.cos(theta+np.pi/4)+width/2,y-R*np.sin(theta+np.pi/4)+width/2) + ax.transData 
-    #     r.set_transform(t)
-    #     ax.add_patch(r)
-    #     ax.text(x, y, blk.block_id, rotation=np.degrees(theta),ha='center')
 
     for blk in blocks.values():
         r = patches.Rectangle((0,0), blk.width, blk.width,facecolor=colors[blk.block_id%9],edgecolor='k',alpha=0.4)

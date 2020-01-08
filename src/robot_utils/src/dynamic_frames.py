@@ -1,7 +1,9 @@
 #!/usr/bin/python
 
-# Authors:  Filippos Sotiropoulos (fes@mit.edu)
-#            Ryan Sandzimier (rsandz@mit.edu)
+# Authors:  Filippos Sotiropoulos (filippos.sotiropoulos@gmail.com)
+#           Ryan Sandzimier (rsandzimier@gmail.com)
+
+# ROS Node broadcasts tf frames
 
 
 import rospy

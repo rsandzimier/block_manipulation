@@ -1,4 +1,0 @@
-<launch>
- 	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find robot_utils)/config/viz.rviz"/>
-    <param name="robot_description" command="cat $(find robot_utils)/models/robot_model.xml" />
-</launch>
