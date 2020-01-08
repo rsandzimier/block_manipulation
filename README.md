@@ -6,4 +6,4 @@ In this project we implement task and motion planning for an object rearrangemen
 
 [1] A.  Krontiris  and  K.  E.  Bekris,  “Dealing  with  difficult  instances  of object rearrangement,” in Robotics: Science and Systems (RSS) , Rome, Italy,   07/2015   2015.
 
-![Pick and place test](https://github.com/rsandzimier/block_manipulation/blob/master/pick_place_and_push.gif)
+A video demonstrating our implementation can be seen here: https://youtu.be/CdenErVEkS4 
